@@ -51,10 +51,10 @@ namespace ConsoleApp1
             Console.WriteLine($"City Name: {contents.Name}\n" +
                 $"Country: {contents.Sys.Country}\n" +
                 $"Current Temperature: {contents.Main.Temp}\n" +
-                $"Wind Speed: {contents.Wind.Speed}km/h\n" +
-                $"Wind Direction: {contents.Wind.Deg}°\n" +
                 $"Temp min: {contents.Main.TempMin}\n" +
-                $"Temp max: {contents.Main.TempMax}");
+                $"Temp max: {contents.Main.TempMax}\n" +
+                $"Wind Speed: {contents.Wind.Speed}km/h\n" +
+                $"Wind Direction: {contents.Wind.Deg}°");
             Console.ReadLine();
         }
     }
