@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Device.Location;
 using System.Net;
+using System.Threading;
 
 namespace ConsoleApp1
 {
@@ -8,18 +10,29 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Please enter your city to get weather data");
-            var cityName = Console.ReadLine();
-            Console.WriteLine($"Getting data for city {cityName}");
-            Console.WriteLine("--------------------------------------------------");
-            GetData(cityName);
+            Console.WriteLine("Do you want to enter city name?");
+            var decision = Console.ReadLine();
+            if (decision.Equals("Y".ToLower()))
+            {
+                Console.WriteLine("Please enter your city to get weather data");
+                var cityName = Console.ReadLine();
+                Console.WriteLine($"Getting data for city {cityName}");
+                Console.WriteLine("--------------------------------------------------");
+                GetDataByCityName(cityName);
+            }
+            else if (decision.Equals("N".ToLower()))
+            {
+                Console.WriteLine("Getting information from device location");
+                Console.WriteLine("--------------------------------------------------");
+                GetDataByLocation();
+            }
         }
 
-        private static void GetData(string cityName)
+        private static void GetDataByCityName(string cityName)
         {
-            string jsonContent = string.Empty;
             bool incorrectCityName = true;
             int count = 0;
+            WeatherData weatherData = new WeatherData();
             while (incorrectCityName)
             {
                 if (count != 0)
@@ -34,7 +47,7 @@ namespace ConsoleApp1
                     try
                     {
                         var json = client.DownloadString(url);
-                        jsonContent = json;
+                        weatherData = JsonConvert.DeserializeObject<WeatherData>(json);
                         incorrectCityName = false;
                     }
                     catch
@@ -46,16 +59,65 @@ namespace ConsoleApp1
                 }
             }
 
-            WeatherData weather = new WeatherData();
-            WeatherData contents = JsonConvert.DeserializeObject<WeatherData>(jsonContent);
-            Console.WriteLine($"City Name: {contents.Name}\n" +
-                $"Country: {contents.Sys.Country}\n" +
-                $"Current Temperature: {contents.Main.Temp}\n" +
-                $"Temp min: {contents.Main.TempMin}\n" +
-                $"Temp max: {contents.Main.TempMax}\n" +
-                $"Wind Speed: {contents.Wind.Speed}km/h\n" +
-                $"Wind Direction: {contents.Wind.Deg}°");
+            WriteData(weatherData);
             Console.ReadLine();
+        }
+
+        private static void GetDataByLocation()
+        {
+            Location location = new Location();
+            WeatherData weatherData = new WeatherData();
+            double latitude;
+            double longitude;
+            location.GetLocationProperty(out latitude, out longitude);
+
+            var url = $"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&units=metric&appid=134f60d139e7bb125d5068fdd4c7ed95";
+
+            using (WebClient client = new WebClient())
+            {
+                try
+                {
+                    var json = client.DownloadString(url);
+                    weatherData = JsonConvert.DeserializeObject<WeatherData>(json);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Invalid coordinates");
+                    Console.WriteLine(ex);
+                    Console.ReadLine();
+                    return;
+                }
+            }
+
+            WriteData(weatherData);
+            Console.ReadLine();
+        }
+
+        private static void WriteData(WeatherData weatherData)
+        {
+            Console.WriteLine($"City Name: {weatherData.Name}\n" +
+                            $"Country: {weatherData.Sys.Country}\n" +
+                            $"Current Temperature: {weatherData.Main.Temp}\n" +
+                            $"Wind Speed: {weatherData.Wind.Speed}km/h\n" +
+                            $"Wind Direction: {weatherData.Wind.Deg}°\n" +
+                            $"Temp min: {weatherData.Main.TempMin}\n" +
+                            $"Temp max: {weatherData.Main.TempMax}");
+        }
+    }
+
+    class Location
+    {
+        public void GetLocationProperty(out double latitude, out double longitude)
+        {
+            GeoCoordinateWatcher watcher = new GeoCoordinateWatcher();
+            watcher.Start();
+            if (watcher.Position.Location.IsUnknown)
+            {
+                Thread.Sleep(200);
+            }
+            GeoCoordinate coord = watcher.Position.Location;
+            latitude = coord.Latitude;
+            longitude = coord.Longitude;
         }
     }
 }
