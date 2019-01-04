@@ -2,34 +2,44 @@
 using System;
 using System.Device.Location;
 using System.Net;
+using System.Text;
 using System.Threading;
 
 namespace ConsoleApp1
 {
     class Program
     {
+        static string continueDecision = "y";
         static void Main(string[] args)
         {
-            Console.WriteLine("Do you want to enter city name?");
-            var decision = Console.ReadLine();
-            if (decision.Equals("Y".ToLower()))
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.WriteLine("Do you want to enter city name? Y/N");
+            var decision = Console.ReadLine().ToLower();
+            while (continueDecision.Equals("y"))
             {
-                Console.WriteLine("Please enter your city to get weather data");
-                var cityName = Console.ReadLine();
-                Console.WriteLine($"Getting data for city {cityName}");
+                if (decision.Equals("y"))
+                {
+                    Console.WriteLine("Please enter city to get weather data:");
+                    var cityName = Console.ReadLine();
+                    Console.WriteLine($"Getting data for city {cityName}:");
+                    Console.WriteLine("--------------------------------------------------");
+                    GetDataByCityName(cityName);
+                }
+                else if (decision.Equals("n"))
+                {
+                    Console.WriteLine("Getting information from device location");
+                    Console.WriteLine("--------------------------------------------------");
+                    GetDataByLocation();
+                }
                 Console.WriteLine("--------------------------------------------------");
-                GetDataByCityName(cityName);
-            }
-            else if (decision.Equals("N".ToLower()))
-            {
-                Console.WriteLine("Getting information from device location");
-                Console.WriteLine("--------------------------------------------------");
-                GetDataByLocation();
+                Console.WriteLine("Do you want to search another city? Y/N");
+                continueDecision = Console.ReadLine().ToLower();
             }
         }
 
         private static void GetDataByCityName(string cityName)
         {
+
             bool incorrectCityName = true;
             int count = 0;
             WeatherData weatherData = new WeatherData();
@@ -50,17 +60,26 @@ namespace ConsoleApp1
                         weatherData = JsonConvert.DeserializeObject<WeatherData>(json);
                         incorrectCityName = false;
                     }
-                    catch
+                    catch (WebException ex)
                     {
-                        count = 1;
-                        incorrectCityName = true;
-                        Console.WriteLine("City name does not exist");
+                        if (ex.Message.Contains("403"))
+                        {
+                            Console.WriteLine(ex);
+                            Console.WriteLine("Forbidden access");
+                            continueDecision = "n";
+                        }
+                        else
+                        {
+                            count = 1;
+                            incorrectCityName = true;
+                            Console.WriteLine("City name does not exist");
+                            Console.WriteLine("Enter correct city name:");
+                        }
                     }
                 }
             }
 
             WriteData(weatherData);
-            Console.ReadLine();
         }
 
         private static void GetDataByLocation()
@@ -95,13 +114,17 @@ namespace ConsoleApp1
 
         private static void WriteData(WeatherData weatherData)
         {
+            var sunriseTime = DateTimeOffset.FromUnixTimeSeconds(weatherData.Sys.Sunrise).LocalDateTime.ToShortTimeString();
+            var sunsetTime = DateTimeOffset.FromUnixTimeSeconds(weatherData.Sys.Sunset).LocalDateTime.ToShortTimeString();
             Console.WriteLine($"City Name: {weatherData.Name}\n" +
                             $"Country: {weatherData.Sys.Country}\n" +
-                            $"Current Temperature: {weatherData.Main.Temp}\n" +
+                            $"Current Temperature: {weatherData.Main.Temp}°C\n" +
                             $"Wind Speed: {weatherData.Wind.Speed}km/h\n" +
                             $"Wind Direction: {weatherData.Wind.Deg}°\n" +
-                            $"Temp min: {weatherData.Main.TempMin}\n" +
-                            $"Temp max: {weatherData.Main.TempMax}");
+                            $"Temp min: {weatherData.Main.TempMin}°C\n" +
+                            $"Temp max: {weatherData.Main.TempMax}°C\n" +
+                            $"Sunrise: {sunriseTime}\n" +
+                            $"Sunset: {sunsetTime}");
         }
     }
 
