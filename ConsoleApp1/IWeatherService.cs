@@ -3,7 +3,8 @@
     internal interface IWeatherService
     {
         //uses Location service
-        void GetData();
-        void GetData(string cityName, string country = "ro");
+        void GetData(ServiceType serviceType);
+        void GetData(string cityName, ServiceType serviceType, string country = "ro");
+        void AnimateLoading();
     }
 }

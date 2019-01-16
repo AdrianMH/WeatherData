@@ -3,6 +3,19 @@ using System.Collections.Generic;
 
 namespace ConsoleApp1
 {
+    enum ServiceType
+    {
+        CurrentWeather = 1,
+        Forecast = 2
+    }
+    public class ForecastData
+    {
+        [JsonProperty("list")]
+        public List<WeatherData> Forecast { get; set; }
+
+        [JsonProperty("city")]
+        public City City { get; set; }
+    }
     public partial class WeatherData
     {
         [JsonProperty("weather")]
@@ -22,6 +35,9 @@ namespace ConsoleApp1
 
         [JsonProperty("dt")]
         public long Dt { get; set; }
+
+        [JsonProperty("dt_txt")]
+        public string Dt_txt { get; set; }
 
         [JsonProperty("sys")]
         public Sys Sys { get; set; }
@@ -97,5 +113,13 @@ namespace ConsoleApp1
 
         [JsonProperty("sunset")]
         public long Sunset { get; set; }
+    }
+
+    public partial class City
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+        [JsonProperty("country")]
+        public string Country { get; set; }
     }
 }
